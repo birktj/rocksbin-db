@@ -1,0 +1,9 @@
+[package]
+name = "rocksbin-db"
+version = "0.1.0"
+authors = ["Birk Tjelmeland <birktjelmeland@yahoo.no>"]
+
+[dependencies]
+rocksdb = "0.10"
+serde = "1.0"
+bincode = "1.0"
