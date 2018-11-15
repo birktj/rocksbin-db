@@ -7,6 +7,8 @@ use serde::{Serialize, de::DeserializeOwned};
 use std::sync::Arc;
 use std::marker::PhantomData;
 use std::path::Path;
+use std::fmt;
+use std::error;
 
 #[derive(Debug)]
 pub enum ErrorKind {
@@ -26,6 +28,24 @@ impl From<bincode::Error> for Error {
 impl From<rocksdb::Error> for Error {
     fn from(e: rocksdb::Error) -> Error {
         Box::new(ErrorKind::Rocksdb(e))
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match **self {
+            ErrorKind::Bincode(ref e) => write!(f, "bincode error: {}", e),
+            ErrorKind::Rocksdb(ref e) => write!(f, "rocksdb error: {}", e),
+        }
+    }
+}
+
+impl error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match **self {
+            ErrorKind::Bincode(ref e) => Some(e),
+            ErrorKind::Rocksdb(ref e) => Some(e),
+        }
     }
 }
 
