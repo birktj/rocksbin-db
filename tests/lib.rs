@@ -10,10 +10,21 @@ fn create_db() {
 }
 
 #[test]
+fn prefix() {
+    let dir = tempfile::tempdir().expect("create tempdir");
+    let db = DB::open(dir.path()).expect("open db");
+    assert!(db.prefix::<u64, u64>(b"test").is_ok());
+    assert!(db.prefix::<u64, u64>(b"test").is_err());
+    assert!(db.prefix::<u64, u64>(b"test1").is_err());
+    assert!(db.prefix::<u64, u64>(b"test2").is_err());
+    assert!(db.prefix::<u64, u64>(b"abc").is_ok());
+}
+
+#[test]
 fn insert() {
     let dir = tempfile::tempdir().expect("create tempdir");
     let db = DB::open(dir.path()).expect("open db");
-    let prefix = db.prefix::<u64, u64>(b"test");
+    let prefix = db.prefix::<u64, u64>(b"test").expect("prefix #1");
 
     prefix.insert(&5, &7).expect("insert #1");
 }
@@ -22,7 +33,7 @@ fn insert() {
 fn get() {
     let dir = tempfile::tempdir().expect("create tempdir");
     let db = DB::open(dir.path()).expect("open db");
-    let prefix = db.prefix::<u64, u64>(b"test");
+    let prefix = db.prefix::<u64, u64>(b"test").expect("prefix #1");
 
     prefix.insert(&5, &7).expect("insert #1");
     assert_eq!(prefix.get(&5).expect("get #1"), Some(7));
@@ -33,7 +44,7 @@ fn get() {
 fn remove() {
     let dir = tempfile::tempdir().expect("create tempdir");
     let db = DB::open(dir.path()).expect("open db");
-    let prefix = db.prefix::<u64, u64>(b"test");
+    let prefix = db.prefix::<u64, u64>(b"test").expect("prefix #1");
 
     prefix.insert(&5, &7).expect("insert #1");
     assert_eq!(prefix.get(&5).expect("get #1"), Some(7));
@@ -46,7 +57,7 @@ fn remove() {
 fn modify() {
     let dir = tempfile::tempdir().expect("create tempdir");
     let db = DB::open(dir.path()).expect("open db");
-    let prefix = db.prefix::<u64, u64>(b"test");
+    let prefix = db.prefix::<u64, u64>(b"test").expect("prefix #1");
 
     prefix.insert(&5, &7).expect("insert #1");
     assert_eq!(prefix.get(&5).expect("get #1"), Some(7));
@@ -58,8 +69,8 @@ fn modify() {
 fn multiple_prefix() {
     let dir = tempfile::tempdir().expect("create tempdir");
     let db = DB::open(dir.path()).expect("open db");
-    let prefix1 = db.prefix::<u64, u64>(b"test1");
-    let prefix2 = db.prefix::<u64, u64>(b"test2");
+    let prefix1 = db.prefix::<u64, u64>(b"test1").expect("prefix #1");
+    let prefix2 = db.prefix::<u64, u64>(b"test2").expect("prefix #1");
 
     prefix1.insert(&5, &7).expect("insert #1");
     prefix2.insert(&6, &7).expect("insert #2");
@@ -73,7 +84,7 @@ fn multiple_prefix() {
 fn iter() {
     let dir = tempfile::tempdir().expect("create tempdir");
     let db = DB::open(dir.path()).expect("open db");
-    let prefix = db.prefix::<u64, u64>(b"test");
+    let prefix = db.prefix::<u64, u64>(b"test").expect("prefix #1");
 
     prefix.insert(&5, &7).expect("insert #1");
     prefix.insert(&6, &8).expect("insert #2");
@@ -91,8 +102,8 @@ fn iter() {
 fn iter_multiple_prefix() {
     let dir = tempfile::tempdir().expect("create tempdir");
     let db = DB::open(dir.path()).expect("open db");
-    let prefix1 = db.prefix::<u64, u64>(b"test1");
-    let prefix2 = db.prefix::<u64, u64>(b"test2");
+    let prefix1 = db.prefix::<u64, u64>(b"test1").expect("prefix #1");
+    let prefix2 = db.prefix::<u64, u64>(b"test2").expect("prefix #1");
 
     prefix1.insert(&5, &7).expect("insert #1");
     prefix1.insert(&6, &8).expect("insert #2");

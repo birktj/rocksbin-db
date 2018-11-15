@@ -4,7 +4,8 @@ extern crate serde;
 
 use serde::{Serialize, de::DeserializeOwned};
 
-use std::sync::Arc;
+use std::collections::BTreeSet;
+use std::sync::{Arc, Mutex};
 use std::marker::PhantomData;
 use std::path::Path;
 use std::fmt;
@@ -14,6 +15,7 @@ use std::error;
 pub enum ErrorKind {
     Bincode(bincode::Error),
     Rocksdb(rocksdb::Error),
+    PrefixExists,
 }
 
 pub type Error = Box<ErrorKind>;
@@ -36,6 +38,7 @@ impl fmt::Display for Error {
         match **self {
             ErrorKind::Bincode(ref e) => write!(f, "bincode error: {}", e),
             ErrorKind::Rocksdb(ref e) => write!(f, "rocksdb error: {}", e),
+            ErrorKind::PrefixExists => write!(f, "prefix exists"),
         }
     }
 }
@@ -45,29 +48,56 @@ impl error::Error for Error {
         match **self {
             ErrorKind::Bincode(ref e) => Some(e),
             ErrorKind::Rocksdb(ref e) => Some(e),
+            _ => None,
         }
     }
 }
 
 #[derive(Clone)]
 pub struct DB {
-    db: Arc<rocksdb::DB>
+    db: Arc<rocksdb::DB>,
+    prefix_list: Arc<Mutex<BTreeSet<Vec<u8>>>>,
 }
 
 impl DB {
     pub fn open<P: AsRef<Path>>(path: P) -> Result<DB> {
         Ok(DB {
-            db: Arc::new(rocksdb::DB::open_default(path)?)
+            db: Arc::new(rocksdb::DB::open_default(path)?),
+            prefix_list: Arc::new(Mutex::new(BTreeSet::new())),
         })
     }
 
-    pub fn prefix<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned>(&self, prefix: &[u8]) -> Prefix<K, V> {
-        Prefix {
+    pub fn prefix<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned>(&self, prefix: &[u8]) -> Result<Prefix<K, V>> {
+        let prefix = prefix.to_owned();
+        
+        if self.prefix_list.lock()
+            .unwrap() // TODO: add extra errorkind instead
+            .range(prefix.clone()..) // TODO: optimize
+            .next()
+            .map(|p| p.starts_with(&prefix))
+            .unwrap_or(false) {
+                return Err(Box::new(ErrorKind::PrefixExists));
+            }
+
+        if self.prefix_list.lock()
+            .unwrap() // TODO: add extra errorkind instead
+            .range(..prefix.clone()) // TODO: optimize
+            .next_back()
+            .map(|p| prefix.starts_with(&p))
+            .unwrap_or(false) {
+                return Err(Box::new(ErrorKind::PrefixExists));
+            }
+
+        self.prefix_list.lock()
+            .unwrap()
+            .insert(prefix.clone());
+
+        Ok(Prefix {
             db: self.db.clone(),
-            prefix: prefix.to_owned(),
+            prefix: prefix,
             _k: PhantomData,
             _v: PhantomData,
-        }
+        })
     }
 }
 

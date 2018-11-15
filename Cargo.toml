@@ -7,3 +7,6 @@ authors = ["Birk Tjelmeland <birktjelmeland@yahoo.no>"]
 rocksdb = "0.10"
 serde = "1.0"
 bincode = "1.0"
+
+[dev-dependencies]
+tempfile = "3.0"
