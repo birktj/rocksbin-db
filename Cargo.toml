@@ -2,6 +2,7 @@
 name = "rocksbin-db"
 version = "0.1.0"
 authors = ["Birk Tjelmeland <birktjelmeland@yahoo.no>"]
+license = "MIT"
 
 [dependencies]
 rocksdb = "0.10"
