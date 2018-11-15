@@ -127,3 +127,39 @@ fn iter_multiple_prefix() {
     assert_eq!(iter2.next().unwrap().unwrap(), (7, 9));
     assert!(iter2.next().is_none());
 }
+
+#[test]
+fn values() {
+    let dir = tempfile::tempdir().expect("create tempdir");
+    let db = DB::open(dir.path()).expect("open db");
+    let prefix = db.prefix::<u64, u64>(b"test").expect("prefix #1");
+
+    prefix.insert(&5, &7).expect("insert #1");
+    prefix.insert(&6, &8).expect("insert #2");
+    prefix.insert(&7, &9).expect("insert #3");
+    
+    let mut iter = prefix.values();
+
+    assert_eq!(iter.next().unwrap().unwrap(), 7);
+    assert_eq!(iter.next().unwrap().unwrap(), 8);
+    assert_eq!(iter.next().unwrap().unwrap(), 9);
+    assert!(iter.next().is_none());
+}
+
+#[test]
+fn keys() {
+    let dir = tempfile::tempdir().expect("create tempdir");
+    let db = DB::open(dir.path()).expect("open db");
+    let prefix = db.prefix::<u64, u64>(b"test").expect("prefix #1");
+
+    prefix.insert(&5, &7).expect("insert #1");
+    prefix.insert(&6, &8).expect("insert #2");
+    prefix.insert(&7, &9).expect("insert #3");
+    
+    let mut iter = prefix.keys();
+
+    assert_eq!(iter.next().unwrap().unwrap(), 5);
+    assert_eq!(iter.next().unwrap().unwrap(), 6);
+    assert_eq!(iter.next().unwrap().unwrap(), 7);
+    assert!(iter.next().is_none());
+}
