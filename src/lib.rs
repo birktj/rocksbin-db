@@ -1,3 +1,41 @@
+//! `rocksbin-db` is a simple library wrapping rocksdb in 
+//! an interface mimicing rust collections like `HashMap`.
+//!
+//! It does this by utilising serde and bincode to automaticly
+//! serialize data you enter into the database.
+//!
+//! # Examples
+//!
+//! ```
+//! #[macro_use]
+//! extern crate serde_derive;
+//!
+//! #[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+//! struct Fish {
+//!     count: u64,
+//!     latin_name: String,
+//! }
+//!
+//! # fn main() {
+//! let db = rocksbin_db::DB::open("db_dir").unwrap();
+//!
+//! let fish = db.prefix::<String, Fish>(b"fish").unwrap();
+//!
+//! let salmon = Fish {
+//!     count: 100,
+//!     latin_name: "Salmo salar".to_string(),
+//! };
+//!
+//! fish.insert(&"salmon".to_string(), &salmon);
+//!
+//! assert_eq!(fish.get(&"salmon".to_string()).unwrap(), Some(salmon));
+//!
+//! # drop(fish);
+//! # drop(db);
+//! # std::fs::remove_dir_all("db_dir").unwrap();
+//! # }
+//! ```
+
 extern crate rocksdb;
 extern crate bincode;
 extern crate serde;
@@ -19,7 +57,8 @@ pub enum ErrorKind {
 }
 
 pub type Error = Box<ErrorKind>;
-pub type Result<T> = ::std::result::Result<T, Error>;
+
+type Result<T> = ::std::result::Result<T, Error>;
 
 impl From<bincode::Error> for Error {
     fn from(e: bincode::Error) -> Error {
@@ -53,6 +92,7 @@ impl error::Error for Error {
     }
 }
 
+/// Entry point for this library
 #[derive(Clone)]
 pub struct DB {
     db: Arc<rocksdb::DB>,
@@ -101,6 +141,7 @@ impl DB {
     }
 }
 
+/// A entry point to data stored in the database 
 #[derive(Clone)]
 pub struct Prefix<K, V> {
     db: Arc<rocksdb::DB>,
