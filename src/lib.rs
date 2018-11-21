@@ -17,7 +17,7 @@
 //! }
 //!
 //! # fn main() {
-//! let db = rocksbin_db::DB::open("db_dir").unwrap();
+//! let db = rocksbin::DB::open("db_dir").unwrap();
 //!
 //! let fish = db.prefix::<String, Fish>(b"fish").unwrap();
 //!
@@ -96,45 +96,24 @@ impl error::Error for Error {
 #[derive(Clone)]
 pub struct DB {
     db: Arc<rocksdb::DB>,
-    prefix_list: Arc<Mutex<BTreeSet<Vec<u8>>>>,
 }
 
 impl DB {
     pub fn open<P: AsRef<Path>>(path: P) -> Result<DB> {
         Ok(DB {
             db: Arc::new(rocksdb::DB::open_default(path)?),
-            prefix_list: Arc::new(Mutex::new(BTreeSet::new())),
         })
     }
 
     pub fn prefix<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned>(&self, prefix: &[u8]) -> Result<Prefix<K, V>> {
-        let prefix = prefix.to_owned();
-        
-        if self.prefix_list.lock()
-            .unwrap() // TODO: add extra errorkind instead
-            .range(prefix.clone()..) // TODO: optimize
-            .next()
-            .map(|p| p.starts_with(&prefix))
-            .unwrap_or(false) {
-                return Err(Box::new(ErrorKind::PrefixExists));
-            }
-
-        if self.prefix_list.lock()
-            .unwrap() // TODO: add extra errorkind instead
-            .range(..prefix.clone()) // TODO: optimize
-            .next_back()
-            .map(|p| prefix.starts_with(&p))
-            .unwrap_or(false) {
-                return Err(Box::new(ErrorKind::PrefixExists));
-            }
-
-        self.prefix_list.lock()
-            .unwrap()
-            .insert(prefix.clone());
+        // No point in using 64bit lenght here
+        // This will never fail
+        let mut prefix_vec = bincode::serialize(&(prefix.len() as u32)).unwrap();
+        prefix_vec.extend_from_slice(&prefix);
 
         Ok(Prefix {
             db: self.db.clone(),
-            prefix: prefix,
+            prefix: prefix_vec,
             _k: PhantomData,
             _v: PhantomData,
         })

@@ -1,7 +1,7 @@
-extern crate rocksbin_db;
+extern crate rocksbin;
 extern crate tempfile;
 
-use rocksbin_db::{DB, Prefix};
+use rocksbin::{DB, Prefix};
 
 #[test]
 fn create_db() {
@@ -14,9 +14,8 @@ fn prefix() {
     let dir = tempfile::tempdir().expect("create tempdir");
     let db = DB::open(dir.path()).expect("open db");
     assert!(db.prefix::<u64, u64>(b"test").is_ok());
-    assert!(db.prefix::<u64, u64>(b"test").is_err());
-    assert!(db.prefix::<u64, u64>(b"test1").is_err());
-    assert!(db.prefix::<u64, u64>(b"test2").is_err());
+    assert!(db.prefix::<u64, u64>(b"test1").is_ok());
+    assert!(db.prefix::<u64, u64>(b"test2").is_ok());
     assert!(db.prefix::<u64, u64>(b"abc").is_ok());
 }
 
@@ -69,7 +68,7 @@ fn modify() {
 fn multiple_prefix() {
     let dir = tempfile::tempdir().expect("create tempdir");
     let db = DB::open(dir.path()).expect("open db");
-    let prefix1 = db.prefix::<u64, u64>(b"test1").expect("prefix #1");
+    let prefix1 = db.prefix::<u64, u64>(b"test").expect("prefix #1");
     let prefix2 = db.prefix::<u64, u64>(b"test2").expect("prefix #1");
 
     prefix1.insert(&5, &7).expect("insert #1");
@@ -102,7 +101,7 @@ fn iter() {
 fn iter_multiple_prefix() {
     let dir = tempfile::tempdir().expect("create tempdir");
     let db = DB::open(dir.path()).expect("open db");
-    let prefix1 = db.prefix::<u64, u64>(b"test1").expect("prefix #1");
+    let prefix1 = db.prefix::<u64, u64>(b"test").expect("prefix #1");
     let prefix2 = db.prefix::<u64, u64>(b"test2").expect("prefix #1");
 
     prefix1.insert(&5, &7).expect("insert #1");
