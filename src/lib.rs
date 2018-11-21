@@ -53,7 +53,6 @@ use std::error;
 pub enum ErrorKind {
     Bincode(bincode::Error),
     Rocksdb(rocksdb::Error),
-    PrefixExists,
 }
 
 pub type Error = Box<ErrorKind>;
@@ -77,7 +76,6 @@ impl fmt::Display for Error {
         match **self {
             ErrorKind::Bincode(ref e) => write!(f, "bincode error: {}", e),
             ErrorKind::Rocksdb(ref e) => write!(f, "rocksdb error: {}", e),
-            ErrorKind::PrefixExists => write!(f, "prefix exists"),
         }
     }
 }
