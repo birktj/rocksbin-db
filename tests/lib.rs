@@ -1,12 +1,12 @@
 extern crate rocksbin;
 extern crate tempfile;
 
-use rocksbin::{DB, Prefix};
+use rocksbin::DB;
 
 #[test]
 fn create_db() {
     let dir = tempfile::tempdir().expect("create tempdir");
-    let db = DB::open(dir.path()).expect("open db");
+    let _db = DB::open(dir.path()).expect("open db");
 }
 
 #[test]

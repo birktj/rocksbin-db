@@ -42,8 +42,7 @@ extern crate serde;
 
 use serde::{Serialize, de::DeserializeOwned};
 
-use std::collections::BTreeSet;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::marker::PhantomData;
 use std::path::Path;
 use std::fmt;
@@ -85,7 +84,6 @@ impl error::Error for Error {
         match **self {
             ErrorKind::Bincode(ref e) => Some(e),
             ErrorKind::Rocksdb(ref e) => Some(e),
-            _ => None,
         }
     }
 }
