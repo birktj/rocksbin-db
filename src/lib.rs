@@ -114,6 +114,66 @@ impl DB {
             _v: PhantomData,
         })
     }
+
+    /// Create a prefix group
+    ///
+    /// It is important that a `PrefixGroup` never has the same prefix as `Prefix`, if they do you
+    /// might get key parse errors
+    pub fn prefix_group(&self, prefix: &[u8]) -> Result<PrefixGroup> {
+        // No point in using 64bit lenght here
+        // This will never fail
+        let mut prefix_vec = bincode::serialize(&(prefix.len() as u32)).unwrap();
+        prefix_vec.extend_from_slice(&prefix);
+
+        Ok(PrefixGroup {
+            db: self.db.clone(),
+            prefix: prefix_vec,
+        })
+    }
+}
+
+/// A way to group prefixes
+#[derive(Clone)]
+pub struct PrefixGroup {
+    db: Arc<rocksdb::DB>,
+    prefix: Vec<u8>,
+}
+
+impl PrefixGroup {
+    /// Create a prefix inside this prefix group
+    ///
+    /// See `DB::prefix`
+    pub fn prefix<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned>(&self, prefix: &[u8]) -> Result<Prefix<K, V>> {
+        // No point in using 64bit lenght here
+        // This will never fail
+        let mut prefix_vec = self.prefix.clone();
+        bincode::serialize_into(&mut prefix_vec, &(prefix.len() as u32))?;
+        prefix_vec.extend_from_slice(&prefix);
+
+        Ok(Prefix {
+            db: self.db.clone(),
+            prefix: prefix_vec,
+            _k: PhantomData,
+            _v: PhantomData,
+        })
+    }
+
+    /// Create a sub prefix group
+    ///
+    /// See `DB::prefix_group`
+    pub fn prefix_group(&self, prefix: &[u8]) -> Result<PrefixGroup> {
+        // No point in using 64bit lenght here
+        // This will never fail
+        let mut prefix_vec = self.prefix.clone();
+        bincode::serialize_into(&mut prefix_vec, &(prefix.len() as u32))?;
+        prefix_vec.extend_from_slice(&prefix);
+
+        Ok(PrefixGroup {
+            db: self.db.clone(),
+            prefix: prefix_vec,
+        })
+    }
+    
 }
 
 /// A entry point to data stored in the database 

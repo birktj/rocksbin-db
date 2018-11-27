@@ -162,3 +162,19 @@ fn keys() {
     assert_eq!(iter.next().unwrap().unwrap(), 7);
     assert!(iter.next().is_none());
 }
+
+#[test]
+fn prefix_group() {
+    let dir = tempfile::tempdir().expect("create tempdir");
+    let db = DB::open(dir.path()).expect("open db");
+    let prefix1 = db.prefix::<u64, u64>(b"test").expect("prefix #1");
+    let prefix_group = db.prefix_group(b"test2").expect("prefix group #1");
+    let prefix2 = prefix_group.prefix::<u64, u64>(b"test2").expect("prefix #2");
+    
+    prefix1.insert(&5, &7).expect("insert #1");
+    prefix2.insert(&5, &9).expect("insert #2");
+
+    assert_eq!(prefix1.get(&5).unwrap(), Some(7));
+    assert_eq!(prefix2.get(&5).unwrap(), Some(9));
+
+}
