@@ -88,7 +88,11 @@ impl error::Error for Error {
     }
 }
 
-/// Entry point for this library
+/// A wrapper over a rocksdb database.
+///
+/// You can create multiple prefixes with keys and values of different types. Prefixes can be used
+/// a bit like tables in conventional databases, e.g., you can have one prefix for posts and one for
+/// users.
 #[derive(Clone)]
 pub struct DB {
     db: Arc<rocksdb::DB>,
@@ -178,7 +182,7 @@ impl PrefixGroup {
     
 }
 
-/// A entry point to data stored in the database 
+/// A grouping of data in a database.
 #[derive(Clone)]
 pub struct Prefix<K, V> {
     db: Arc<rocksdb::DB>,
