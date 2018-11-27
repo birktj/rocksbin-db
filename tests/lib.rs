@@ -176,5 +176,23 @@ fn prefix_group() {
 
     assert_eq!(prefix1.get(&5).unwrap(), Some(7));
     assert_eq!(prefix2.get(&5).unwrap(), Some(9));
+}
 
+#[test]
+fn sub_prefix_group() {
+    let dir = tempfile::tempdir().expect("create tempdir");
+    let db = DB::open(dir.path()).expect("open db");
+    let prefix1 = db.prefix::<u64, u64>(b"test").expect("prefix #1");
+    let prefix_group1 = db.prefix_group(b"test2").expect("prefix group #1");
+    let prefix_group2 = db.prefix_group(b"test3").expect("prefix group #2");
+    let prefix2 = prefix_group1.prefix::<u64, u64>(b"test2").expect("prefix #2");
+    let prefix3 = prefix_group2.prefix::<u64, u64>(b"test2").expect("prefix #3");
+    
+    prefix1.insert(&5, &7).expect("insert #1");
+    prefix2.insert(&5, &9).expect("insert #2");
+    prefix3.insert(&5, &11).expect("insert #3");
+
+    assert_eq!(prefix1.get(&5).unwrap(), Some(7));
+    assert_eq!(prefix2.get(&5).unwrap(), Some(9));
+    assert_eq!(prefix3.get(&5).unwrap(), Some(11));
 }
