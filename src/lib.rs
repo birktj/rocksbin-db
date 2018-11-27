@@ -95,12 +95,14 @@ pub struct DB {
 }
 
 impl DB {
+    /// Open a database at `path`
     pub fn open<P: AsRef<Path>>(path: P) -> Result<DB> {
         Ok(DB {
             db: Arc::new(rocksdb::DB::open_default(path)?),
         })
     }
 
+    /// Create a prefix where you can store data
     pub fn prefix<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned>(&self, prefix: &[u8]) -> Result<Prefix<K, V>> {
         // No point in using 64bit lenght here
         // This will never fail
@@ -186,6 +188,12 @@ pub struct Prefix<K, V> {
 }
 
 impl<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned> Prefix<K, V> {
+    /// Returns the value coresponing to the key. If there is no such value, `Ok(None)` is returned.
+    ///
+    /// This function will return `Err` if one of the following occures:
+    /// - Serializing the key fails
+    /// - The underlying rocksdb command fails
+    /// - Deserializeing of the value fails
     pub fn get(&self, key: &K) -> Result<Option<V>> {
         let mut key_buf = self.prefix.clone();
         key_buf.reserve(bincode::serialized_size(&key)? as usize);
@@ -196,6 +204,11 @@ impl<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned> Prefix<K,
         }
     }
 
+    /// Insert a key-value pair.
+    ///
+    /// This function will return `Err` if one of the following occures:
+    /// - Serializing the key or the value fails
+    /// - The underlying rocksdb command fails
     pub fn insert(&self, key: &K, value: &V) -> Result<()> {
         let mut key_buf = self.prefix.clone();
         key_buf.reserve(bincode::serialized_size(&key)? as usize);
@@ -206,6 +219,11 @@ impl<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned> Prefix<K,
         Ok(())
     }
 
+    /// Removes a key-value pair.
+    ///
+    /// This function will return `Err` if one of the following occures:
+    /// - Serializing the key fails
+    /// - The underlying rocksdb command fails
     pub fn remove(&self, key: &K) -> Result<()> {
         let mut key_buf = self.prefix.clone();
         key_buf.reserve(bincode::serialized_size(&key)? as usize);
@@ -215,10 +233,16 @@ impl<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned> Prefix<K,
         Ok(())
     }
 
+    /// Check if this prefix contains a key.
+    ///
+    /// This function will return `Err` in the same cases as `Prefix::get`
     pub fn contains_key(&self, key: &K) -> Result<bool> {
         self.get(key).map(|v| v.is_some()) // TODO: optimize
     }
 
+    /// Modify a value coresponing to a key.
+    ///
+    /// This function will return `Err` in the same cases as `Prefix::get` and `Prefix::insert`
     pub fn modify<F: FnOnce(&mut V)>(&self, key: &K, f: F) -> Result<()> {
         match self.get(key)? {
             Some(mut value) => {
@@ -229,6 +253,8 @@ impl<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned> Prefix<K,
         }
     }
 
+    /// An iterator visiting all key-value pairs of this prefix.
+    /// The iterator type is `Result<(K, V), Error>`
     pub fn iter(&self) -> Iter<K, V> {
         let mut db_iter = self.db.raw_iterator();
         db_iter.seek(&self.prefix);
@@ -241,6 +267,8 @@ impl<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned> Prefix<K,
         }
     }
 
+    /// An iterator visiting all keys of this prefix.
+    /// The iterator type is `Result<K, Error>`
     pub fn keys(&self) -> Keys<K> {
         let mut db_iter = self.db.raw_iterator();
         db_iter.seek(&self.prefix);
@@ -252,6 +280,8 @@ impl<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned> Prefix<K,
         }
     }
 
+    /// An iterator visiting all values of this prefix.
+    /// The iterator type is `Result<V, Error>`
     pub fn values(&self) -> Values<V> {
         let mut db_iter = self.db.raw_iterator();
         db_iter.seek(&self.prefix);
@@ -264,6 +294,7 @@ impl<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned> Prefix<K,
     }
 }
 
+/// An iterator over the key-value pairs of a prefix.
 pub struct Iter<K, V> {
     db_iter: rocksdb::DBRawIterator,
     prefix: Vec<u8>,
@@ -295,6 +326,7 @@ impl<K: DeserializeOwned, V: DeserializeOwned> Iterator for Iter<K, V> {
     }
 }
 
+/// An iterator over the keys of a prefix.
 pub struct Keys<K> {
     db_iter: rocksdb::DBRawIterator,
     prefix: Vec<u8>,
@@ -321,6 +353,7 @@ impl<K: DeserializeOwned> Iterator for Keys<K> {
     }
 }
 
+/// An iterator over the values of a prefix.
 pub struct Values<V> {
     db_iter: rocksdb::DBRawIterator,
     prefix: Vec<u8>,
