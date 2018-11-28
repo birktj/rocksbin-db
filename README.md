@@ -1,4 +1,7 @@
 # Rocksbin-db
+[![Build Status](https://img.shields.io/travis/com/birktj/rocksbin-db.svg)](https://travis-ci.com/birktj/rocksbin-db)
+[![GitHub license](https://img.shields.io/github/license/birktj/rocksbin-db.svg)](https://github.com/birktj/rocksbin-db/blob/master/LICENSE)
+
 
 A simple rust rocksdb wrapper using serde and bincode
 for automatic serialization.
