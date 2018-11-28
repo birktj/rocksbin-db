@@ -2,12 +2,11 @@
 [![Build Status](https://img.shields.io/travis/com/birktj/rocksbin-db.svg)](https://travis-ci.com/birktj/rocksbin-db)
 [![GitHub license](https://img.shields.io/github/license/birktj/rocksbin-db.svg)](https://github.com/birktj/rocksbin-db/blob/master/LICENSE)
 
-
 A simple rust rocksdb wrapper using serde and bincode
 for automatic serialization.
 
-This library is perfect if what you really want is a
-persistent HashMap without having to keep it in memory.
+This library is perfect if what you want is a persistent
+HashMap stored on disk and a simple API.
 
 ```rust
 extern crate rocksbin_db;
