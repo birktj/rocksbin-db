@@ -1,6 +1,6 @@
 # Rocksbin-db
-[![Crates.io](https://img.shields.io/crates/v/rocksbin.svg)](https://crates.io/crates/rocksbin)
 [![Build Status](https://img.shields.io/travis/com/birktj/rocksbin-db.svg)](https://travis-ci.com/birktj/rocksbin-db)
+[![Crates.io](https://img.shields.io/crates/v/rocksbin.svg)](https://crates.io/crates/rocksbin)
 [![Documentation](https://docs.rs/rocksbin/badge.svg)](https://docs.rs/rocksbin)
 [![GitHub license](https://img.shields.io/github/license/birktj/rocksbin-db.svg)](https://github.com/birktj/rocksbin-db/blob/master/LICENSE)
 
