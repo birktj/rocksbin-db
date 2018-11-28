@@ -48,6 +48,7 @@ use std::path::Path;
 use std::fmt;
 use std::error;
 
+/// Errors that can occur.
 #[derive(Debug)]
 pub enum ErrorKind {
     Bincode(bincode::Error),
