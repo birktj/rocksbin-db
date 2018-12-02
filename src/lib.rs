@@ -198,7 +198,7 @@ impl<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned> Prefix<K,
     /// This function will return `Err` if one of the following occures:
     /// - Serializing the key fails
     /// - The underlying rocksdb command fails
-    /// - Deserializeing of the value fails
+    /// - Deserializing of the value fails
     pub fn get(&self, key: &K) -> Result<Option<V>> {
         let mut key_buf = self.prefix.clone();
         key_buf.reserve(bincode::serialized_size(&key)? as usize);
