@@ -26,9 +26,9 @@
 //!     latin_name: "Salmo salar".to_string(),
 //! };
 //!
-//! fish.insert(&"salmon".to_string(), &salmon);
+//! fish.insert("salmon", &salmon);
 //!
-//! assert_eq!(fish.get(&"salmon".to_string()).unwrap(), Some(salmon));
+//! assert_eq!(fish.get("salmon").unwrap(), Some(salmon));
 //!
 //! # drop(fish);
 //! # drop(db);
@@ -42,6 +42,7 @@ extern crate serde;
 
 use serde::{de::DeserializeOwned, Serialize};
 
+use std::borrow::Borrow;
 use std::error;
 use std::fmt;
 use std::marker::PhantomData;
@@ -118,8 +119,8 @@ impl DB {
     /// let fish_names = db.prefix::<String, String>(b"fish").unwrap();
     /// let fish_count = db.prefix::<String, u64>(b"fish_count").unwrap();
     ///
-    /// fish_names.insert(&"salmon".to_string(), &"salmo salar".to_string());
-    /// fish_count.insert(&"salmon".to_string(), &1234);
+    /// fish_names.insert("salmon", &"salmo salar".to_string());
+    /// fish_count.insert("salmon", &1234);
     ///
     /// assert_eq!(fish_names.iter().count(), 1);
     /// assert_eq!(fish_count.iter().count(), 1);
@@ -210,6 +211,10 @@ impl PrefixGroup {
 }
 
 /// A grouping of data in a database.
+///
+/// Most methods of `Prefix` use `Borrow` in a similar fashion like `HashMap`.
+/// This means that if you have a prefix of type `Prefix<String, u64>` you can use both `&String`
+/// and `&str` to access the data.
 #[derive(Clone)]
 pub struct Prefix<K, V> {
     db: Arc<rocksdb::DB>,
@@ -225,7 +230,27 @@ impl<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned> Prefix<K,
     /// - Serializing the key fails
     /// - The underlying rocksdb command fails
     /// - Deserializing of the value fails
-    pub fn get(&self, key: &K) -> Result<Option<V>> {
+    ///
+    /// # Examples
+    /// ```
+    /// # let db = rocksbin::DB::open("db_dir").unwrap();
+    /// let heights = db.prefix::<String, u64>(b"heights").unwrap();
+    ///
+    /// heights.insert("John", &175).unwrap();
+    /// heights.insert(&"Lisa".to_string(), &165).unwrap();
+    ///
+    /// assert_eq!(heights.get("John").unwrap(), Some(175));
+    /// assert_eq!(heights.get("Lisa").unwrap(), Some(165));
+    ///
+    /// # drop(heights);
+    /// # drop(db);
+    /// # std::fs::remove_dir_all("db_dir").unwrap();
+    /// ```
+    pub fn get<Q>(&self, key: &Q) -> Result<Option<V>>
+    where
+        K: Borrow<Q>,
+        Q: Serialize + ?Sized,
+    {
         let mut key_buf = self.prefix.clone();
         key_buf.reserve(bincode::serialized_size(&key)? as usize);
         bincode::serialize_into(&mut key_buf, &key)?;
@@ -240,7 +265,11 @@ impl<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned> Prefix<K,
     /// This function will return `Err` if one of the following occures:
     /// - Serializing the key or the value fails
     /// - The underlying rocksdb command fails
-    pub fn insert(&self, key: &K, value: &V) -> Result<()> {
+    pub fn insert<Q>(&self, key: &Q, value: &V) -> Result<()>
+    where
+        K: Borrow<Q>,
+        Q: Serialize + ?Sized,
+    {
         let mut key_buf = self.prefix.clone();
         key_buf.reserve(bincode::serialized_size(&key)? as usize);
         bincode::serialize_into(&mut key_buf, &key)?;
@@ -255,7 +284,11 @@ impl<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned> Prefix<K,
     /// This function will return `Err` if one of the following occures:
     /// - Serializing the key fails
     /// - The underlying rocksdb command fails
-    pub fn remove(&self, key: &K) -> Result<()> {
+    pub fn remove<Q>(&self, key: &Q) -> Result<()>
+    where
+        K: Borrow<Q>,
+        Q: Serialize + ?Sized,
+    {
         let mut key_buf = self.prefix.clone();
         key_buf.reserve(bincode::serialized_size(&key)? as usize);
         bincode::serialize_into(&mut key_buf, &key)?;
@@ -267,14 +300,22 @@ impl<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned> Prefix<K,
     /// Check if this prefix contains a key.
     ///
     /// This function will return `Err` in the same cases as `Prefix::get`
-    pub fn contains_key(&self, key: &K) -> Result<bool> {
+    pub fn contains_key<Q>(&self, key: &Q) -> Result<bool>
+    where
+        K: Borrow<Q>,
+        Q: Serialize + ?Sized,
+    {
         self.get(key).map(|v| v.is_some()) // TODO: optimize
     }
 
     /// Modify a value coresponing to a key.
     ///
     /// This function will return `Err` in the same cases as `Prefix::get` and `Prefix::insert`
-    pub fn modify<F: FnOnce(&mut V)>(&self, key: &K, f: F) -> Result<()> {
+    pub fn modify<Q, F: FnOnce(&mut V)>(&self, key: &Q, f: F) -> Result<()>
+    where
+        K: Borrow<Q>,
+        Q: Serialize + ?Sized,
+    {
         match self.get(key)? {
             Some(mut value) => {
                 f(&mut value);

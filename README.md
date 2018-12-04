@@ -19,9 +19,9 @@ let db = DB::open("db_dir").unwrap();
 
 let fish_count = db.prefix::<String, u64>(b"fish_count").unwarp();
 
-fish_count.insert(&"salmon".to_string(), 10).unwarp();
-fish_count.insert(&"cod".to_string(), 100).unwarp();
-fish_count.insert(&"mackerel".to_string(), 70).unwarp();
+fish_count.insert("salmon", 10).unwarp();
+fish_count.insert("cod", 100).unwarp();
+fish_count.insert("mackerel", 70).unwarp();
 
-assert_eq!(fish_count.get(&"salmon".to_string()).unwarp(), Some(10));
+assert_eq!(fish_count.get("salmon").unwarp(), Some(10));
 ```
