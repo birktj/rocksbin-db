@@ -100,14 +100,35 @@ pub struct DB {
 }
 
 impl DB {
-    /// Open a database at `path`
+    /// Open a database at `path`.
     pub fn open<P: AsRef<Path>>(path: P) -> Result<DB> {
         Ok(DB {
             db: Arc::new(rocksdb::DB::open_default(path)?),
         })
     }
 
-    /// Create a prefix where you can store data
+    /// Create a prefix where you can store data.
+    ///
+    /// Prefixes can safely be prefixes of each other as seen in the example.
+    ///
+    /// # Examples
+    /// ```
+    /// let db = rocksbin::DB::open("db_dir").unwrap();
+    ///
+    /// let fish_names = db.prefix::<String, String>(b"fish").unwrap();
+    /// let fish_count = db.prefix::<String, u64>(b"fish_count").unwrap();
+    ///
+    /// fish_names.insert(&"salmon".to_string(), &"salmo salar".to_string());
+    /// fish_count.insert(&"salmon".to_string(), &1234);
+    ///
+    /// assert_eq!(fish_names.iter().count(), 1);
+    /// assert_eq!(fish_count.iter().count(), 1);
+    ///
+    /// # drop(fish_names);
+    /// # drop(fish_count);
+    /// # drop(db);
+    /// # std::fs::remove_dir_all("db_dir").unwrap();
+    /// ```
     pub fn prefix<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned>(
         &self,
         prefix: &[u8],
@@ -125,7 +146,7 @@ impl DB {
         })
     }
 
-    /// Create a prefix group
+    /// Create a prefix group.
     ///
     /// It is important that a `PrefixGroup` never has the same prefix as `Prefix`, if they do you
     /// might get key parse errors
@@ -142,7 +163,7 @@ impl DB {
     }
 }
 
-/// A way to group prefixes
+/// A way to group prefixes.
 #[derive(Clone)]
 pub struct PrefixGroup {
     db: Arc<rocksdb::DB>,
@@ -150,7 +171,7 @@ pub struct PrefixGroup {
 }
 
 impl PrefixGroup {
-    /// Create a prefix inside this prefix group
+    /// Create a prefix inside this prefix group.
     ///
     /// See `DB::prefix`
     pub fn prefix<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned>(
@@ -171,7 +192,7 @@ impl PrefixGroup {
         })
     }
 
-    /// Create a sub prefix group
+    /// Create a sub prefix group.
     ///
     /// See `DB::prefix_group`
     pub fn prefix_group(&self, prefix: &[u8]) -> Result<PrefixGroup> {
