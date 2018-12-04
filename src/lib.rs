@@ -1,4 +1,4 @@
-//! `rocksbin-db` is a simple library wrapping rocksdb in 
+//! `rocksbin-db` is a simple library wrapping rocksdb in
 //! an interface mimicing rust collections like `HashMap`.
 //!
 //! It does this by utilising serde and bincode to automaticly
@@ -36,17 +36,17 @@
 //! # }
 //! ```
 
-extern crate rocksdb;
 extern crate bincode;
+extern crate rocksdb;
 extern crate serde;
 
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Serialize};
 
-use std::sync::Arc;
+use std::error;
+use std::fmt;
 use std::marker::PhantomData;
 use std::path::Path;
-use std::fmt;
-use std::error;
+use std::sync::Arc;
 
 /// Errors that can occur.
 #[derive(Debug)]
@@ -108,7 +108,10 @@ impl DB {
     }
 
     /// Create a prefix where you can store data
-    pub fn prefix<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned>(&self, prefix: &[u8]) -> Result<Prefix<K, V>> {
+    pub fn prefix<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned>(
+        &self,
+        prefix: &[u8],
+    ) -> Result<Prefix<K, V>> {
         // No point in using 64bit lenght here
         // This will never fail
         let mut prefix_vec = bincode::serialize(&(prefix.len() as u32)).unwrap();
@@ -150,7 +153,10 @@ impl PrefixGroup {
     /// Create a prefix inside this prefix group
     ///
     /// See `DB::prefix`
-    pub fn prefix<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned>(&self, prefix: &[u8]) -> Result<Prefix<K, V>> {
+    pub fn prefix<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned>(
+        &self,
+        prefix: &[u8],
+    ) -> Result<Prefix<K, V>> {
         // No point in using 64bit lenght here
         // This will never fail
         let mut prefix_vec = self.prefix.clone();
@@ -180,7 +186,6 @@ impl PrefixGroup {
             prefix: prefix_vec,
         })
     }
-    
 }
 
 /// A grouping of data in a database.
@@ -254,7 +259,7 @@ impl<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned> Prefix<K,
                 f(&mut value);
                 self.insert(&key, &value)
             }
-            None => Ok(())
+            None => Ok(()),
         }
     }
 
@@ -324,8 +329,7 @@ impl<K: DeserializeOwned, V: DeserializeOwned> Iterator for Iter<K, V> {
 
             self.db_iter.next();
             k.and_then(|k| v.map(|v| Ok((k?, v?))))
-        }
-        else {
+        } else {
             None
         }
     }
@@ -351,8 +355,7 @@ impl<K: DeserializeOwned> Iterator for Keys<K> {
 
             self.db_iter.next();
             k
-        }
-        else {
+        } else {
             None
         }
     }
@@ -374,15 +377,14 @@ impl<V: DeserializeOwned> Iterator for Values<V> {
                 // We do not reuse the buffer so this is safe
                 unsafe {self.db_iter.key_inner()}
                     .and_then(|k| if &k[0..self.prefix.len()] == &self.prefix[..] { Some(k) } else { None } )
-                    .and_then(|_| 
+                    .and_then(|_|
                         unsafe {self.db_iter.value_inner()}
                             .map(|v| Ok(bincode::deserialize(v)?))
                         );
 
             self.db_iter.next();
             v
-        }
-        else {
+        } else {
             None
         }
     }

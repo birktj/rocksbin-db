@@ -88,7 +88,7 @@ fn iter() {
     prefix.insert(&5, &7).expect("insert #1");
     prefix.insert(&6, &8).expect("insert #2");
     prefix.insert(&7, &9).expect("insert #3");
-    
+
     let mut iter = prefix.iter();
 
     assert_eq!(iter.next().unwrap().unwrap(), (5, 7));
@@ -111,7 +111,7 @@ fn iter_multiple_prefix() {
     prefix2.insert(&5, &7).expect("insert #4");
     prefix2.insert(&6, &8).expect("insert #5");
     prefix2.insert(&7, &9).expect("insert #6");
-    
+
     let mut iter1 = prefix2.iter();
 
     assert_eq!(iter1.next().unwrap().unwrap(), (5, 7));
@@ -136,7 +136,7 @@ fn values() {
     prefix.insert(&5, &7).expect("insert #1");
     prefix.insert(&6, &8).expect("insert #2");
     prefix.insert(&7, &9).expect("insert #3");
-    
+
     let mut iter = prefix.values();
 
     assert_eq!(iter.next().unwrap().unwrap(), 7);
@@ -154,7 +154,7 @@ fn keys() {
     prefix.insert(&5, &7).expect("insert #1");
     prefix.insert(&6, &8).expect("insert #2");
     prefix.insert(&7, &9).expect("insert #3");
-    
+
     let mut iter = prefix.keys();
 
     assert_eq!(iter.next().unwrap().unwrap(), 5);
@@ -169,8 +169,10 @@ fn prefix_group() {
     let db = DB::open(dir.path()).expect("open db");
     let prefix1 = db.prefix::<u64, u64>(b"test").expect("prefix #1");
     let prefix_group = db.prefix_group(b"test2").expect("prefix group #1");
-    let prefix2 = prefix_group.prefix::<u64, u64>(b"test2").expect("prefix #2");
-    
+    let prefix2 = prefix_group
+        .prefix::<u64, u64>(b"test2")
+        .expect("prefix #2");
+
     prefix1.insert(&5, &7).expect("insert #1");
     prefix2.insert(&5, &9).expect("insert #2");
 
@@ -185,9 +187,13 @@ fn sub_prefix_group() {
     let prefix1 = db.prefix::<u64, u64>(b"test").expect("prefix #1");
     let prefix_group1 = db.prefix_group(b"test2").expect("prefix group #1");
     let prefix_group2 = db.prefix_group(b"test3").expect("prefix group #2");
-    let prefix2 = prefix_group1.prefix::<u64, u64>(b"test2").expect("prefix #2");
-    let prefix3 = prefix_group2.prefix::<u64, u64>(b"test2").expect("prefix #3");
-    
+    let prefix2 = prefix_group1
+        .prefix::<u64, u64>(b"test2")
+        .expect("prefix #2");
+    let prefix3 = prefix_group2
+        .prefix::<u64, u64>(b"test2")
+        .expect("prefix #3");
+
     prefix1.insert(&5, &7).expect("insert #1");
     prefix2.insert(&5, &9).expect("insert #2");
     prefix3.insert(&5, &11).expect("insert #3");
