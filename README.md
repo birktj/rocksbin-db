@@ -11,9 +11,9 @@ This library is perfect if what you want is a persistent
 HashMap stored on disk and a simple API.
 
 ```rust
-extern crate rocksbin_db;
+extern crate rocksbin;
 
-use rocksbin_db::DB;
+use rocksbin::DB;
 
 let db = DB::open("db_dir").unwrap();
 
