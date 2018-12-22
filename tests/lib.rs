@@ -202,3 +202,14 @@ fn sub_prefix_group() {
     assert_eq!(prefix2.get(&5).unwrap(), Some(9));
     assert_eq!(prefix3.get(&5).unwrap(), Some(11));
 }
+
+#[test]
+fn borrow_key() {
+    let dir = tempfile::tempdir().expect("create tempdir");
+    let db = DB::open(dir.path()).expect("open db");
+    let prefix = db.prefix::<String, String>(b"test").expect("prefix");
+
+    prefix.insert(&"a".to_string(), &"b".to_string()).unwrap();
+    
+    assert_eq!(prefix.get("a").unwrap(), Some("b".to_string()));
+}
