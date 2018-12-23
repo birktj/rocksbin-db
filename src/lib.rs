@@ -114,7 +114,7 @@ impl DB {
     ///
     /// # Examples
     /// ```
-    /// let db = rocksbin::DB::open("db_dir").unwrap();
+    /// let db = rocksbin::DB::open("data").unwrap();
     ///
     /// let fish_names = db.prefix::<String, String>(b"fish").unwrap();
     /// let fish_count = db.prefix::<String, u64>(b"fish_count").unwrap();
@@ -128,7 +128,7 @@ impl DB {
     /// # drop(fish_names);
     /// # drop(fish_count);
     /// # drop(db);
-    /// # std::fs::remove_dir_all("db_dir").unwrap();
+    /// # std::fs::remove_dir_all("data").unwrap();
     /// ```
     pub fn prefix<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned>(
         &self,
@@ -233,7 +233,7 @@ impl<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned> Prefix<K,
     ///
     /// # Examples
     /// ```
-    /// # let db = rocksbin::DB::open("db_dir").unwrap();
+    /// # let db = rocksbin::DB::open("db_dir2").unwrap();
     /// let heights = db.prefix::<String, u64>(b"heights").unwrap();
     ///
     /// heights.insert("John", &175).unwrap();
@@ -244,7 +244,7 @@ impl<K: Serialize + DeserializeOwned, V: Serialize + DeserializeOwned> Prefix<K,
     ///
     /// # drop(heights);
     /// # drop(db);
-    /// # std::fs::remove_dir_all("db_dir").unwrap();
+    /// # std::fs::remove_dir_all("db_dir2").unwrap();
     /// ```
     pub fn get<Q>(&self, key: &Q) -> Result<Option<V>>
     where
