@@ -40,7 +40,7 @@ extern crate bincode;
 extern crate rocksdb;
 extern crate serde;
 
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{de::DeserializeOwned, Serialize, ser::SerializeSeq, Serializer, Deserializer, de::Visitor, de::SeqAccess, de::value::SeqDeserializer, de::value::U8Deserializer};
 
 use std::borrow::Borrow;
 use std::error;
@@ -161,6 +161,82 @@ impl DB {
             db: self.db.clone(),
             prefix: prefix_vec,
         })
+    }
+
+    /// Import database data from a deserializer.
+    ///
+    /// # Examples
+    /// ```
+    /// extern crate serde_json;
+    /// # let db = rocksbin::DB::open("db_dir_3").unwrap();
+    ///
+    /// let prefix = db.prefix::<String, String>(b"prefix").unwrap();
+    ///
+    /// prefix.insert("foo", &"bar".to_string());
+    ///
+    /// let value = serde_json::to_value(db).unwrap();
+    ///
+    /// // ...
+    /// # drop(prefix);
+    ///
+    /// # let db = rocksbin::DB::open("db_dir_3").unwrap();
+    /// db.import(value).unwrap();
+    ///
+    /// let prefix = db.prefix::<String, String>(b"prefix").unwrap();
+    ///
+    /// assert_eq!(prefix.get("foo").unwrap(), Some("bar".to_string()));
+    ///
+    /// # drop(prefix);
+    /// # drop(db);
+    /// # std::fs::remove_dir_all("db_dir_3").unwrap();
+    /// ```
+    pub fn import<'de, D: Deserializer<'de>>(&self, deserializer: D) -> std::result::Result<(), D::Error> {
+        let visitor = DBVisitor { db: self.clone() };
+
+        deserializer.deserialize_seq(visitor)?;
+
+        Ok(())
+    }
+}
+
+struct DBVisitor {
+    db: DB,
+}
+
+impl<'de> Visitor<'de> for DBVisitor {
+    type Value = ();
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "a database seq")
+    }
+
+    fn visit_seq<A>(self, mut map: A) -> std::result::Result<(), A::Error> 
+        where A: SeqAccess<'de>
+    {
+        while let Some((key, value)) = map.next_element::<(Vec<_>, Vec<_>)>()? {
+            self.db.db.put(&key, &value).map_err(|e| serde::de::Error::custom(e))?;
+        }
+
+        Ok(())
+    }
+
+}
+
+impl Serialize for DB {
+    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
+        let mut iter = self.db.raw_iterator();
+        iter.seek_to_first();
+
+        let mut map = serializer.serialize_seq(None)?;
+
+        while iter.valid() {
+            if let (Some(key), Some(value)) = (iter.key(), iter.value()) {
+                map.serialize_element(&(key,value))?;
+            }
+            iter.next();
+        }
+
+        map.end()
     }
 }
 

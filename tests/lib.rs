@@ -1,5 +1,6 @@
 extern crate rocksbin;
 extern crate tempfile;
+extern crate serde_json;
 
 use rocksbin::DB;
 
@@ -210,6 +211,29 @@ fn borrow_key() {
     let prefix = db.prefix::<String, String>(b"test").expect("prefix");
 
     prefix.insert(&"a".to_string(), &"b".to_string()).unwrap();
+    
+    assert_eq!(prefix.get("a").unwrap(), Some("b".to_string()));
+}
+
+#[test]
+fn import_export() {
+    let dir = tempfile::tempdir().expect("create tempdir");
+    let json = {
+        let db = DB::open(dir.path()).expect("open db");
+        let prefix = db.prefix::<String, String>(b"test").expect("prefix");
+
+        prefix.insert(&"a".to_string(), &"b".to_string()).unwrap();
+
+        serde_json::to_value(db).unwrap()
+    };
+    
+    println!("{}", json);
+
+    let db = DB::open(dir.path()).expect("open db");
+    
+    db.import(json).unwrap();
+
+    let prefix = db.prefix::<String, String>(b"test").expect("prefix");
     
     assert_eq!(prefix.get("a").unwrap(), Some("b".to_string()));
 }
