@@ -11,7 +11,7 @@ description = "A simple rocksdb wrapper using serde and bincode for automatic se
 keywords = ["database", "persistence"]
 
 [dependencies]
-rocksdb = "0.10"
+rocksdb = "0.11"
 serde = "1.0"
 bincode = "1.0"
 
